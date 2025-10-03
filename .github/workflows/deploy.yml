@@ -47,72 +47,74 @@ jobs:
       - name: Enviar código para a VPS (sem node_modules e .git)
         run: rsync -avz --exclude 'node_modules' --exclude '.git' ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/rsprolipsi/
 
-      - name: Publicar e (re)iniciar serviços no servidor
+      - name: Instalar dependências e reiniciar serviços no servidor
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOSSH'
             set -e
-
+            
+            # Garante que o PM2 use o diretório correto, mesmo em scripts não-interativos
+            export PM2_HOME=${PM2_HOME:-/root/.pm2}
             TARGET_BASE="/var/www/rsprolipsi"
-            APPS="raiz admin escritorio api shopping studio walletpay"
 
-            # garante diretórios-base
-            sudo mkdir -p "$TARGET_BASE"
-            sudo chown -R $USER:$USER "$TARGET_BASE"
+            # Garante que o PM2 esteja instalado
+            if ! command -v pm2 >/dev/null 2>&1; then
+              echo "==> Instalando PM2 globalmente"
+              sudo npm install -g pm2
+            fi
 
-            # Sincroniza cada app para sua pasta
-            for APP in $APPS; do
-              echo "==> Sincronizando $APP"
-              mkdir -p "$TARGET_BASE/$APP"
-              rsync -az --delete \
-                --exclude ".git" \
-                --exclude "node_modules" \
-                "/tmp/rsprolipsi_release/$APP/" "$TARGET_BASE/$APP/"
+            # Função para instalar dependências, buildar (se houver) e (re)iniciar um app com PM2
+            process_app () {
+              local PM2_NAME="$1"
+              local APP_PATH="$2"
+              local APP_DIR="$TARGET_BASE/$APP_PATH"
+
+              if [ ! -d "$APP_DIR" ]; then
+                echo "==> AVISO: Diretório do app '$PM2_NAME' não encontrado em '$APP_DIR'. Pulando."
+                return
+              fi
+
+              echo "==> Processando app: $PM2_NAME"
+              cd "$APP_DIR"
               
-              # instala dependências se existir package.json
-              if [ -f "$TARGET_BASE/$APP/package.json" ]; then
-                echo "==> Instalando dependências ($APP)"
-                cd "$TARGET_BASE/$APP"
-                # se quiser instalar só runtime (sem dev): npm ci --omit=dev
-                npm ci || npm install
-                # se existir script de build, executa
+              # Instala dependências se houver um package.json
+              if [ -f "package.json" ]; then
+                echo "    -> Instalando dependências (npm ci)..."
+                npm ci --only=production || (echo "npm ci falhou, tentando npm install" && npm install --only=production)
+                
+                # Executa o build se o script existir
                 if npm run | grep -q " build"; then
-                  echo "==> Build ($APP)"
+                  echo "    -> Executando build (npm run build)..."
                   npm run build
                 fi
               fi
-            done
 
-            # garante pm2 instalado
-            if ! command -v pm2 >/dev/null 2>&1; then
-              echo "==> Instalando PM2 global"
-              sudo npm i -g pm2
-            fi
-
-            # função pra (re)iniciar app com PM2
-            pm2_start_or_reload () {
-              APP_DIR="$1"
-              PM2_NAME="$2"
+              # Reinicia ou inicia o app com PM2
               if pm2 list | grep -q "$PM2_NAME"; then
-                echo "==> Reload $PM2_NAME"
-                pm2 reload "$PM2_NAME"
+                echo "    -> Reiniciando app com PM2..."
+                pm2 reload "$PM2_NAME" --update-env
               else
-                echo "==> Start $PM2_NAME"
-                cd "$APP_DIR"
-                # tenta usar npm start; ajuste se seu start for diferente (ex: "next start -p 3000")
-                pm2 start npm --name "$PM2_NAME" -- start
+                echo "    -> Iniciando app com PM2..."
+                # Tenta usar o script 'start' do package.json
+                if [ -f "package.json" ] && grep -q "\"start\"" "package.json"; then
+                    pm2 start npm --name "$PM2_NAME" -- start
+                else
+                    echo "    -> AVISO: Não foi possível iniciar '$PM2_NAME'. Nenhum script 'start' encontrado no package.json."
+                fi
               fi
             }
 
-            pm2_start_or_reload "$TARGET_BASE/raiz"        "rs-raiz"
-            pm2_start_or_reload "$TARGET_BASE/admin"       "rs-admin"
-            pm2_start_or_reload "$TARGET_BASE/escritorio"  "rs-escritorio"
-            pm2_start_or_reload "$TARGET_BASE/api"         "rs-api"
-            pm2_start_or_reload "$TARGET_BASE/shopping"    "rs-shopping"
-            pm2_start_or_reload "$TARGET_BASE/studio"      "rs-studio"
-            pm2_start_or_reload "$TARGET_BASE/walletpay"   "rs-walletpay"
+            # Mapeamento de Nomes PM2 para diretórios dos Apps
+            # Adicione ou remova linhas conforme sua necessidade
+            process_app "rs-raiz"       "apps/raiz"
+            process_app "rs-admin"      "apps/admin"
+            process_app "rs-escritorio" "apps/escritorio"
+            process_app "rs-api"        "apps/api"
+            process_app "rs-shop"       "apps/rsshop"
+            process_app "rs-ia"         "apps/rsia"
+            process_app "rs-walletpay"  "apps/rswalletpay"
 
-            echo "==> Salvando lista PM2"
+            echo "==> Salvando o estado do PM2"
             pm2 save
 
-            echo "==> Deploy finalizado com sucesso."
+            echo "==> Script de deploy no servidor finalizado."
           EOSSH
