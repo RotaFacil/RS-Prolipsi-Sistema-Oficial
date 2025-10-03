@@ -40,18 +40,12 @@ jobs:
       #     echo "Se você usar build por projeto, mova cada comando pra dentro do servidor no passo de SSH"
 
       - name: Preparar chave SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+        uses: webfactory/ssh-agent@v0.5.2
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Enviar código para a VPS (sem node_modules e .git)
-        run: |
-          rsync -az --delete \
-            --exclude ".git" \
-            --exclude "node_modules" \
-            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/rsprolipsi_release
+        run: rsync -avz --exclude 'node_modules' --exclude '.git' ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/rsprolipsi/
 
       - name: Publicar e (re)iniciar serviços no servidor
         run: |
