@@ -1,0 +1,79 @@
+﻿{
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "vpsHost",
+      "type": "promptString",
+      "description": "VPS host (ex: vps.rsprolipsi.com)",
+      "default": "vps.rsprolipsi.com"
+    },
+    {
+      "id": "vpsUser",
+      "type": "promptString",
+      "description": "VPS user (ex: rsprolipsi)",
+      "default": "rsprolipsi"
+    }
+  ],
+  "tasks": [
+    {
+      "label": "Deploy: admin",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; HOST=${input:vpsHost}; USER=${input:vpsUser}; SERVICE=admin; PORT=3001; REMOTE_ROOT=~/rsprolipsi; RSYNC_EXCLUDES=('--exclude' '.env' '--exclude' '.env.*' '--exclude' 'node_modules' '--exclude' '.next/cache' '--exclude' 'dist' '--exclude' '.git'); rsync -az --delete ${RSYNC_EXCLUDES[@]} ./ ${USER}@${HOST}:${REMOTE_ROOT}/; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}/apps/${SERVICE}; npm ci; npm run build\"; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}; pm2 start ecosystem.config.cjs --only ${SERVICE} --env production || true; pm2 reload ${SERVICE} --update-env; pm2 save\"; ssh ${USER}@${HOST} \"set -euo pipefail; curl -I http://127.0.0.1:${PORT} | head -n1\""
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: escritorio",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; HOST=${input:vpsHost}; USER=${input:vpsUser}; SERVICE=escritorio; PORT=3002; REMOTE_ROOT=~/rsprolipsi; RSYNC_EXCLUDES=('--exclude' '.env' '--exclude' '.env.*' '--exclude' 'node_modules' '--exclude' '.next/cache' '--exclude' 'dist' '--exclude' '.git'); rsync -az --delete ${RSYNC_EXCLUDES[@]} ./ ${USER}@${HOST}:${REMOTE_ROOT}/; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}/apps/${SERVICE}; npm ci; npm run build\"; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}; pm2 start ecosystem.config.cjs --only ${SERVICE} --env production || true; pm2 reload ${SERVICE} --update-env; pm2 save\"; ssh ${USER}@${HOST} \"set -euo pipefail; curl -I http://127.0.0.1:${PORT} | head -n1\""
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: api",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; HOST=${input:vpsHost}; USER=${input:vpsUser}; SERVICE=api; PORT=3003; REMOTE_ROOT=~/rsprolipsi; RSYNC_EXCLUDES=('--exclude' '.env' '--exclude' '.env.*' '--exclude' 'node_modules' '--exclude' '.next/cache' '--exclude' 'dist' '--exclude' '.git'); rsync -az --delete ${RSYNC_EXCLUDES[@]} ./ ${USER}@${HOST}:${REMOTE_ROOT}/; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}/apps/${SERVICE}; npm ci; npm run build\"; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}; pm2 start ecosystem.config.cjs --only ${SERVICE} --env production || true; pm2 reload ${SERVICE} --update-env; pm2 save\"; ssh ${USER}@${HOST} \"set -euo pipefail; curl -I http://127.0.0.1:${PORT} | head -n1\""
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: rsshop",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; HOST=${input:vpsHost}; USER=${input:vpsUser}; SERVICE=rsshop; PORT=3004; REMOTE_ROOT=~/rsprolipsi; RSYNC_EXCLUDES=('--exclude' '.env' '--exclude' '.env.*' '--exclude' 'node_modules' '--exclude' '.next/cache' '--exclude' 'dist' '--exclude' '.git'); rsync -az --delete ${RSYNC_EXCLUDES[@]} ./ ${USER}@${HOST}:${REMOTE_ROOT}/; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}/apps/${SERVICE}; npm ci; npm run build\"; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}; pm2 start ecosystem.config.cjs --only ${SERVICE} --env production || true; pm2 reload ${SERVICE} --update-env; pm2 save\"; ssh ${USER}@${HOST} \"set -euo pipefail; curl -I http://127.0.0.1:${PORT} | head -n1\""
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: rswalletpay",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; HOST=${input:vpsHost}; USER=${input:vpsUser}; SERVICE=rswalletpay; PORT=3005; REMOTE_ROOT=~/rsprolipsi; RSYNC_EXCLUDES=('--exclude' '.env' '--exclude' '.env.*' '--exclude' 'node_modules' '--exclude' '.next/cache' '--exclude' 'dist' '--exclude' '.git'); rsync -az --delete ${RSYNC_EXCLUDES[@]} ./ ${USER}@${HOST}:${REMOTE_ROOT}/; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}/apps/${SERVICE}; npm ci; npm run build\"; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}; pm2 start ecosystem.config.cjs --only ${SERVICE} --env production || true; pm2 reload ${SERVICE} --update-env; pm2 save\"; ssh ${USER}@${HOST} \"set -euo pipefail; curl -I http://127.0.0.1:${PORT} | head -n1\""
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy: rsia",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "set -euo pipefail; HOST=${input:vpsHost}; USER=${input:vpsUser}; SERVICE=rsia; PORT=3006; REMOTE_ROOT=~/rsprolipsi; RSYNC_EXCLUDES=('--exclude' '.env' '--exclude' '.env.*' '--exclude' 'node_modules' '--exclude' '.next/cache' '--exclude' 'dist' '--exclude' '.git'); rsync -az --delete ${RSYNC_EXCLUDES[@]} ./ ${USER}@${HOST}:${REMOTE_ROOT}/; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}/apps/${SERVICE}; npm ci; npm run build\"; ssh ${USER}@${HOST} \"set -euo pipefail; cd ${REMOTE_ROOT}; pm2 start ecosystem.config.cjs --only ${SERVICE} --env production || true; pm2 reload ${SERVICE} --update-env; pm2 save\"; ssh ${USER}@${HOST} \"set -euo pipefail; curl -I http://127.0.0.1:${PORT} | head -n1\""
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

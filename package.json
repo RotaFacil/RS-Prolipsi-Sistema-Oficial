@@ -1,0 +1,26 @@
+{
+  "name": "rsprolipsi-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:all": "concurrently \"npm run dev --workspace @rsprolipsi/admin\" \"npm run dev --workspace @rsprolipsi/escritorio\" \"npm run dev --workspace @rsprolipsi/api\" \"npm run dev --workspace @rsprolipsi/rsshop\" \"npm run dev --workspace @rsprolipsi/rswalletpay\" \"npm run dev --workspace @rsprolipsi/rsia\"",
+    "build:all": "npm run build --workspaces --if-present",
+    "start:all": "npm run start --workspaces --if-present",
+    "lint:all": "npm run lint --workspaces --if-present",
+    "format:all": "npm run format --workspaces --if-present",
+    "test:all": "npm run test --workspaces --if-present",
+    "predeploy:check": "node scripts/predeploy-check.js",
+    "smoke:https": "node scripts/smoke-https.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "node-ssh": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=18.18.0",
+    "npm": ">=9.0.0"
+  }
+}

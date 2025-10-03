@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package.json tsconfig.base.json ./
+COPY apps/raiz/package.json ./apps/raiz/
+COPY apps/admin/package.json ./apps/admin/
+COPY apps/escritorio/package.json ./apps/escritorio/
+COPY apps/api/package.json ./apps/api/
+COPY apps/rsshop/package.json ./apps/rsshop/
+COPY apps/rswalletpay/package.json ./apps/rswalletpay/
+COPY apps/rsia/package.json ./apps/rsia/
+
+RUN npm install
+
+ENV NODE_ENV=development
+
+CMD ["npm", "run", "dev:all"]

@@ -1,0 +1,5 @@
+{
+  "name": "Nano Banana Studio",
+  "description": "An AI-powered media creation web application for generating and editing images and videos. Features an iterative workflow, creation gallery with IndexedDB persistence, and an advanced prompt helper to inspire creativity.",
+  "requestFramePermissions": []
+}

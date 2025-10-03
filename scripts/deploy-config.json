@@ -1,0 +1,16 @@
+{
+  "host": "72.60.144.245",
+  "username": "root",
+  "port": 22,
+  "privateKeyPath": "",
+  "remotePath": "/home/rsprolipsi/apps",
+  "apps": [
+    "raiz",
+    "admin",
+    "escritorio",
+    "api",
+    "rsshop",
+    "rsia",
+    "rswalletpay"
+  ]
+}

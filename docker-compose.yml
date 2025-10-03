@@ -1,0 +1,113 @@
+version: "3.9"
+
+x-node-service: &node-service
+  image: rsprolipsi-dev
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  working_dir: /app
+  init: true
+  restart: unless-stopped
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+  networks:
+    - rsprolipsi-net
+
+services:
+  admin:
+    <<: *node-service
+    command: npm run dev --workspace @rsprolipsi/admin
+    environment:
+      PORT: 3001
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - admin_node_modules:/app/apps/admin/node_modules
+      - ./apps/admin/logs:/app/apps/admin/logs
+    ports:
+      - "3001:3001"
+
+  escritorio:
+    <<: *node-service
+    command: npm run dev --workspace @rsprolipsi/escritorio
+    environment:
+      PORT: 3002
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - escritorio_node_modules:/app/apps/escritorio/node_modules
+      - ./apps/escritorio/logs:/app/apps/escritorio/logs
+    ports:
+      - "3002:3002"
+
+  api:
+    <<: *node-service
+    command: npm run dev --workspace @rsprolipsi/api
+    environment:
+      PORT: 3003
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - api_node_modules:/app/apps/api/node_modules
+      - ./apps/api/logs:/app/apps/api/logs
+    ports:
+      - "3003:3003"
+
+  rsshop:
+    <<: *node-service
+    command: npm run dev --workspace @rsprolipsi/rsshop
+    environment:
+      PORT: 3004
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - rsshop_node_modules:/app/apps/rsshop/node_modules
+      - ./apps/rsshop/logs:/app/apps/rsshop/logs
+    ports:
+      - "3004:3004"
+
+  rswalletpay:
+    <<: *node-service
+    command: npm run dev --workspace @rsprolipsi/rswalletpay
+    environment:
+      PORT: 3005
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - rswalletpay_node_modules:/app/apps/rswalletpay/node_modules
+      - ./apps/rswalletpay/logs:/app/apps/rswalletpay/logs
+    ports:
+      - "3005:3005"
+
+  rsia:
+    <<: *node-service
+    command: npm run dev --workspace @rsprolipsi/rsia
+    environment:
+      PORT: 3006
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - rsia_node_modules:/app/apps/rsia/node_modules
+      - ./apps/rsia/logs:/app/apps/rsia/logs
+    ports:
+      - "3006:3006"
+
+networks:
+  rsprolipsi-net:
+    driver: bridge
+
+volumes:
+  node_modules:
+  admin_node_modules:
+  escritorio_node_modules:
+  api_node_modules:
+  rsshop_node_modules:
+  rswalletpay_node_modules:
+  rsia_node_modules:

@@ -1,0 +1,165 @@
+name: Deploy automático
+
+on:
+  push:
+    branches:
+      - main        # roda sempre que você der push na branch main
+  workflow_dispatch: # permite rodar manualmente pelo botão "Run workflow"
+
+env:
+  TARGET_BASE: /var/www/rsprolipsi
+  APPS: "raiz admin escritorio api shopping studio walletpay"
+  # nomes no PM2 (altere se quiser outros nomes)
+  PM2_RAIZ: rs-raiz
+  PM2_ADMIN: rs-admin
+  PM2_ESCRITORIO: rs-escritorio
+  PM2_API: rs-api
+  PM2_SHOPPING: rs-shopping
+  PM2_STUDIO: rs-studio
+  PM2_WALLETPAY: rs-walletpay
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      # se quiser buildar no runner, descomente os 3 passos abaixo:
+      # - name: Instalar Node
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: '18'
+      #
+      # - name: Instalar dependências
+      #   run: npm ci
+      #
+      # - name: Build (opcional, por projeto)
+      #   run: |
+      #     echo "Se você usar build por projeto, mova cada comando pra dentro do servidor no passo de SSH"
+
+      - name: Preparar chave SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Enviar código para a VPS (sem node_modules e .git)
+        run: |
+          rsync -az --delete \
+            --exclude ".git" \
+            --exclude "node_modules" \
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/rsprolipsi_release
+
+      - name: Publicar e (re)iniciar serviços no servidor
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
+            set -e
+
+            TARGET_BASE="/var/www/rsprolipsi"
+            APPS="raiz admin escritorio api shopping studio walletpay"
+
+            # garante diretórios-base
+            sudo mkdir -p "$TARGET_BASE"
+            sudo chown -R $USER:$USER "$TARGET_BASE"
+
+            # Sincroniza cada app para sua pasta
+            for APP in $APPS; do
+              echo "==> Sincronizando $APP"
+              mkdir -p "$TARGET_BASE/$APP"
+              rsync -az --delete \
+                --exclude ".git" \
+                --exclude "node_modules" \
+                "/tmp/rsprolipsi_release/$APP/" "$TARGET_BASE/$APP/"
+              
+              # instala dependências se existir package.json
+              if [ -f "$TARGET_BASE/$APP/package.json" ]; then
+                echo "==> Instalando dependências ($APP)"
+                cd "$TARGET_BASE/$APP"
+                # se quiser instalar só runtime (sem dev): npm ci --omit=dev
+                npm ci || npm install
+                # se existir script de build, executa
+                if npm run | grep -q " build"; then
+                  echo "==> Build ($APP)"
+                  npm run build
+                fi
+              fi
+            done
+
+            # garante pm2 instalado
+            if ! command -v pm2 >/dev/null 2>&1; then
+              echo "==> Instalando PM2 global"
+              sudo npm i -g pm2
+            fi
+
+            # função pra (re)iniciar app com PM2
+            pm2_start_or_reload () {
+              APP_DIR="$1"
+              PM2_NAME="$2"
+              if pm2 list | grep -q "$PM2_NAME"; then
+                echo "==> Reload $PM2_NAME"
+                pm2 reload "$PM2_NAME"
+              else
+                echo "==> Start $PM2_NAME"
+                cd "$APP_DIR"
+                # tenta usar npm start; ajuste se seu start for diferente (ex: "next start -p 3000")
+                pm2 start npm --name "$PM2_NAME" -- start
+              fi
+            }
+
+            pm2_start_or_reload "$TARGET_BASE/raiz"        "rs-raiz"
+            pm2_start_or_reload "$TARGET_BASE/admin"       "rs-admin"
+            pm2_start_or_reload "$TARGET_BASE/escritorio"  "rs-escritorio"
+            pm2_start_or_reload "$TARGET_BASE/api"         "rs-api"
+            pm2_start_or_reload "$TARGET_BASE/shopping"    "rs-shopping"
+            pm2_start_or_reload "$TARGET_BASE/studio"      "rs-studio"
+            pm2_start_or_reload "$TARGET_BASE/walletpay"   "rs-walletpay"
+
+            echo "==> Salvando lista PM2"
+            pm2 save
+
+            echo "==> Deploy finalizado com sucesso."
+          end;
+          name: Deploy automático
+name: Deploy automático
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Configurar SSH (chave dos Secrets)
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Sincronizar arquivos para o servidor
+        run: |
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/Sistema-RS-Pr-lipsi/
+
+      - name: Instalar deps e (re)carregar PM2 no servidor
+        run: |
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            set -e
+            cd /var/www/Sistema-RS-Pr-lipsi && \
+            npm ci || npm i && \
+            npm run build:all && \
+            pm2 restart ecosystem.config.cjs --update-env && \
+            pm2 save && \
+            echo 'Mostrando logs do PM2 para o app admin:' && \
+            pm2 logs admin --lines 50 --nostream
+          "

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Estúdio RS • Hub de Criação</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #0b0b0c;
+        --panel: #111113;
+        --muted: #a3a3a3;
+        --text: #f4f4f5;
+        --gold: #d4af37;
+        --gold-600: #c79a14;
+        --border: #27272a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: "Inter", ui-sans-serif, system-ui;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+      }
+      header {
+        border-bottom: 1px solid var(--border);
+        background: linear-gradient(0deg, rgba(212,175,55,0.06), rgba(212,175,55,0.06)), var(--panel);
+      }
+      .wrap { max-width: 1080px; margin: 0 auto; padding: 16px; }
+      .brand { display: flex; align-items: baseline; gap: 10px; }
+      .brand h1 { margin: 0; font-size: 18px; color: var(--gold); letter-spacing: 0.5px; }
+      .brand small { color: var(--muted); }
+      main { padding: 24px 16px; }
+      .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+      @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr; } }
+      .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+      .title { margin: 0 0 8px 0; font-size: 18px; }
+      .muted { color: var(--muted); }
+      .btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); color: var(--text); background: #151517; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+      .btn.primary { background: var(--gold); color: #0b0b0c; border-color: #a8871c; }
+      .btn.primary:hover { background: var(--gold-600); }
+      .btn.danger { background: #3a0f12; border-color: #5c1a1f; color: #fda4af; }
+      .field { display: grid; gap: 6px; }
+      .field input, .field select, .field textarea { background: #0f0f10; border: 1px solid var(--border); color: var(--text); padding: 10px 12px; border-radius: 8px; }
+      table { width: 100%; border-collapse: collapse; font-size: 14px; }
+      th, td { padding: 10px 12px; border-top: 1px solid var(--border); }
+      th { text-align: left; color: var(--muted); font-weight: 500; }
+      .right { text-align: right; }
+      footer { border-top: 1px solid var(--border); color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap brand">
+        <h1>Estúdio RS • Hub de Criação</h1>
+        <small>Pages • Canvas/Imagens • Copy • Data — tema preto &amp; dourado</small>
+      </div>
+    </header>
+    <main class="wrap">
+      <div class="grid">
+        <section class="card">
+          <h2 class="title">Salas</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px">
+            <a class="btn" href="#pages">Pages</a>
+            <a class="btn" href="#canvas">Canvas/Imagens</a>
+            <a class="btn" href="#copy">Copy</a>
+            <a class="btn" href="#data">Data</a>
+            <a class="btn" href="#projects">Projetos</a>
+            <a class="btn" href="#publish">Publicar</a>
+          </div>
+          <p class="muted">Publicados: <code>/pub/&lt;projeto&gt;/current/</code></p>
+        </section>
+        <section class="card">
+          <h2 class="title">Saúde &amp; Diag</h2>
+          <p>Health: <code>/health</code></p>
+          <p>Providers: <code>/diag/providers</code></p>
+          <button id="ping" class="btn" style="margin-top:8px">Ping Health</button>
+          <pre id="health" class="muted" style="margin-top:8px"></pre>
+        </section>
+        <section class="card">
+          <h2 class="title">Projetos</h2>
+          <form id="newProject" class="grid" style="grid-template-columns: 1fr auto; gap: 12px; margin: 8px 0">
+            <input name="id" placeholder="ex.: landing-rs-2025" required />
+            <button class="btn primary" type="submit">Criar</button>
+          </form>
+          <div id="projects" class="muted"></div>
+        </section>
+      </div>
+    </main>
+    <footer>
+      <div class="wrap" style="padding:12px">RS Prólipsi • RSIA</div>
+    </footer>
+    <script>
+      async function load() {
+        // Listar projetos
+        const res = await fetch('/projects');
+        const json = await res.json();
+        const el = document.querySelector('#projects');
+        el.innerHTML = (json.items||[]).map(p => `• <code>${p.id}</code> → <a class="btn" href="/pub/${p.id}/current/" target="_blank">abrir</a>`).join('<br/>') || '<em>Nenhum projeto</em>';
+      }
+      document.querySelector('#newProject').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = new FormData(e.target).get('id');
+        if (!id) return;
+        const res = await fetch('/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+        if (res.ok) { e.target.reset(); load(); }
+      });
+      document.querySelector('#ping').addEventListener('click', async () => {
+        const res = await fetch('/health');
+        const json = await res.json();
+        document.querySelector('#health').textContent = JSON.stringify(json, null, 2);
+      });
+      load();
+    </script>
+  </body>
+</html>
