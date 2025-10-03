@@ -40,16 +40,16 @@ jobs:
       #     echo "Se você usar build por projeto, mova cada comando pra dentro do servidor no passo de SSH"
 
       - name: Preparar chave SSH
-        uses: webfactory/ssh-agent@v0.5.2
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY_trae }}
 
       - name: Enviar código para a VPS (sem node_modules e .git)
-        run: rsync -avz --exclude 'node_modules' --exclude '.git' ./ ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/rsprolipsi/
+        run: rsync -avz --exclude 'node_modules' --exclude '.git' ./ ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/rsprolipsi/
 
       - name: Publicar e (re)iniciar serviços no servidor
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOSSH'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOSSH'
             set -e
 
             TARGET_BASE="/var/www/rsprolipsi"
