@@ -121,45 +121,4 @@ jobs:
             pm2 save
 
             echo "==> Deploy finalizado com sucesso."
-          end;
-          name: Deploy automático
-name: Deploy automático
-
-on:
-  push:
-    branches:
-      - main
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout do repositório
-        uses: actions/checkout@v3
-
-      - name: Configurar SSH (chave dos Secrets)
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Sincronizar arquivos para o servidor
-        run: |
-          rsync -az --delete \
-            -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/var/www/Sistema-RS-Pr-lipsi/
-
-      - name: Instalar deps e (re)carregar PM2 no servidor
-        run: |
-          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
-            set -e
-            cd /var/www/Sistema-RS-Pr-lipsi && \
-            npm ci || npm i && \
-            npm run build:all && \
-            pm2 restart ecosystem.config.cjs --update-env && \
-            pm2 save && \
-            echo 'Mostrando logs do PM2 para o app admin:' && \
-            pm2 logs admin --lines 50 --nostream
-          "
+          EOSSH
