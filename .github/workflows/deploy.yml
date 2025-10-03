@@ -39,22 +39,6 @@ jobs:
       #   run: |
       #     echo "Se você usar build por projeto, mova cada comando pra dentro do servidor no passo de SSH"
 
-      - name: Verificar segredos
-        run: |
-          if [ -z "${{ secrets.SSH_HOST }}" ]; then
-            echo "::error::O segredo SSH_HOST não foi configurado."
-            exit 1
-          fi
-          if [ -z "${{ secrets.SSH_USER }}" ]; then
-            echo "::error::O segredo SSH_USER não foi configurado."
-            exit 1
-          fi
-          if [ -z "${{ secrets.SERVER_SSH_KEY_trae }}" ]; then
-            echo "::error::O segredo SERVER_SSH_KEY_trae não foi configurado."
-            exit 1
-          fi
-          echo "Todos os segredos foram encontrados."
-
       - name: Preparar chave SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
